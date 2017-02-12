@@ -1,5 +1,5 @@
 language: python
-
+sudo: required
 python:
   - 2.7
 
@@ -21,7 +21,6 @@ before_script:
 
 
 script:
-  - python manage.py test
   - coverage run --source chaven manage.py test
 
 after_success:
