@@ -1,0 +1,6 @@
+Django>=1.10
+djangorestframework
+django-filter
+psycopg2
+python-ldap
+django-extensions
