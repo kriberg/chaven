@@ -6,6 +6,9 @@ python:
 services:
   - postgresql
 
+addons:
+  postgresql: 9.6
+
 env:
   - DJANGO=1.10
 
@@ -15,6 +18,7 @@ install:
 
 before_script:
   - pip freeze
+
 
 script:
   - python manage.py test
