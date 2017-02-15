@@ -1,8 +1,11 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import JSONField
+from django.utils import timezone
+import pytz
 
 
 class Capsuler(AbstractUser):
@@ -21,6 +24,9 @@ class Capsuler(AbstractUser):
             return obj.owner == self
         else:
             return obj.owner.owner == self
+
+    def get_security_object(self):
+        return {}
 
 
 class APIKey(models.Model):
@@ -48,14 +54,70 @@ class APIKey(models.Model):
         return '{0} ({1})'.format(self.name, self.keyID)
 
 
+class AccessClaimManager(models.Manager):
+    def check_access(self, public_info):
+        '''
+        Finds any valid claim matching a character's public info from the
+        xmlapi
+
+        :param public_info: xmlapi info from CharacterAffiliation
+        :return: all valid claims
+        '''
+        return self.filter(valid_until__gt=timezone.now()).filter(
+            (
+                Q(entity_type=AccessClaim.CHARACTER) &
+                Q(entityID=getattr(public_info, 'characterID')) &
+                Q(name=getattr(public_info, 'characterName'))
+            ) |
+            (
+                Q(entity_type=AccessClaim.CORPORATION) &
+                Q(entityID=getattr(public_info, 'corporationID')) &
+                Q(name=getattr(public_info, 'corporationName'))
+            ) |
+            (
+                Q(entity_type=AccessClaim.ALLIANCE) &
+                Q(entityID=getattr(public_info, 'allianceID')) &
+                Q(name=getattr(public_info, 'allianceName'))
+            ) |
+            (
+                Q(entity_type=AccessClaim.FACTION) &
+                Q(entityID=getattr(public_info, 'factionID')) &
+                Q(name=getattr(public_info, 'factionName'))
+            )
+        )
+    def check_access_token(self, token):
+        '''
+        Find any access claim from a one-time token
+
+        :param token: access token
+        :return: all valid claims
+        '''
+
+        return self.filter(valid_until__gt=timezone.now(),
+                           entity_type=AccessClaim.TOKEN,
+                           name=token)
+
+
 class AccessClaim(models.Model):
+    CHARACTER = 0
+    CORPORATION = 1
+    ALLIANCE = 2
+    FACTION = 3
+    TOKEN = 4
+
+    VERY_LONG_TIME = timezone.datetime(2099, 12, 31, tzinfo=pytz.UTC)
+
     ENTITY_TYPE = (
-        (0, 'Character'),
-        (1, 'Corporation'),
-        (2, 'Alliance')
+        (CHARACTER, 'Character'),
+        (CORPORATION, 'Corporation'),
+        (ALLIANCE, 'Alliance'),
+        (FACTION, 'Faction'),
+        (TOKEN, 'Token'),
     )
 
     entity_type = models.SmallIntegerField(choices=ENTITY_TYPE)
     name = models.CharField(max_length=255)
     entityID = models.BigIntegerField(null=True)
+    valid_until = models.DateTimeField(default=VERY_LONG_TIME)
 
+    objects = AccessClaimManager()

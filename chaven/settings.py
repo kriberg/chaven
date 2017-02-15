@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     # external apps
     'django_extensions',
     'rest_framework',
+    'rest_framework_swagger',
 
     # chaven apps
     'chaven.accounting',
@@ -98,7 +99,7 @@ if 'TRAVIS' in os.environ:
             'NAME': 'chaven',
             'USER': 'postgres',
             'PASSWORD': '',
-            'HOST': 'localhost',
+            'HOST': '',
             'PORT': '',
         }
     }
@@ -136,13 +137,61 @@ USE_L10N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static/'
+STATIC_URL = '/api/static/'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'debug': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'filters': ['require_debug_true'],
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+        }
+    },
+    'root': {
+        'handlers': ['console', 'debug'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    }
+}
 
 AUTH_USER_MODEL = 'accounting.Capsuler'
 
 REST_FRAMEWORK = {
-    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
-
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+    ),
 }
 
 # Configuration parameters for Chaven. Dont change them in this file, but
@@ -152,6 +201,10 @@ CHAVEN_SECRET_KEY = None
 CHAVEN_CALLBACK_URL = None
 CHAVEN_TAG_LINE = 'alliance in a box'  # This will be displayed on the login screen.
 
+JWT_AUTH = {
+    'JWT_RESPONSE_PAYLOAD_HANDLER':
+        'chaven.accounting.authentication.jwt_response_payload_handler',
+}
 
 try:
     from chaven.local_settings import *

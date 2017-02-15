@@ -4,3 +4,8 @@ django-filter
 psycopg2
 python-ldap
 django-extensions
+djangorestframework-jwt
+esipy
+eveapi
+requests
+django-rest-swagger
