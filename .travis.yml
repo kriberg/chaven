@@ -18,6 +18,7 @@ install:
 
 before_script:
   - pip freeze
+  - psql -c 'alter user travis superuser;' -U postgres
 
 
 script:
