@@ -16,7 +16,6 @@ env:
 before_install:
   - sudo /etc/init.d/postgresql stop
   - psql --version
-  - psql -c 'alter user travis superuser;' -U postgres
 
 install:
   - pip install -r requirements.txt
